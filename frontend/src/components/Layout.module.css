@@ -1,0 +1,60 @@
+/* CSS Module for Layout.tsx */
+.header {
+  background-color: #282c34; /* Darker header for Layout */
+  padding: 20px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h1 { /* Specific h1 style for Layout's header */
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.navLinks a {
+  color: #61dafb; /* React blue for links in Layout's nav */
+  margin-left: 15px;
+  text-decoration: none;
+}
+
+.navLinks a:hover {
+  text-decoration: underline;
+}
+
+.authSection {
+  display: flex;
+  align-items: center;
+}
+
+.authSection span { /* For user name text */
+  margin-right: 10px;
+  color: #ffffff; /* Ensure username is visible on dark header */
+}
+
+.authSection button { /* Specific styling for login/logout buttons in Layout */
+  background-color: #61dafb;
+  color: #282c34;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.authSection button:hover {
+  background-color: #52bade;
+}
+
+.mainContent {
+  padding: 20px;
+  min-height: 70vh; /* Ensure footer is pushed down */
+}
+
+.footer {
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid #eee;
+  font-size: 0.9em;
+  color: #777;
+}
