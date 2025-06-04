@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "**" ] # Run on all branches for PRs
+
+jobs:
+  lint-test-build:
+    name: Lint, Test, and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn' # Cache Yarn dependencies
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run linters
+        run: yarn lint # Assumes root package.json has a lint script running workspace lints
+
+      - name: Run tests
+        run: yarn test # Assumes root package.json has a test script running workspace tests
+
+      - name: Build backend
+        run: yarn build:backend # Assumes root package.json script: "yarn workspace backend build"
+
+      - name: Build frontend
+        run: yarn build:frontend # Assumes root package.json script: "yarn workspace frontend build"

@@ -1,0 +1,26 @@
+{
+  "name": "bjj-academy-saas",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "yarn workspace backend start:dev",
+    "dev:frontend": "yarn workspace frontend start",
+    "build:backend": "yarn workspace backend build",
+    "build:frontend": "yarn workspace frontend build",
+    "lint": "yarn workspaces foreach run lint",
+    "test": "yarn workspaces foreach run test"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/migibert/acadojo",
+  "author": "google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>",
+  "license": "MIT"
+}
