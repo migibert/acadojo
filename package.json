@@ -10,7 +10,7 @@
     "dev:frontend": "yarn workspace frontend start",
     "build:backend": "yarn workspace backend build",
     "build:frontend": "yarn workspace frontend build",
-    "lint": "yarn workspaces foreach run lint",
+    "lint": "(cd backend && yarn lint) && (cd frontend && yarn lint)",
     "test": "yarn workspaces foreach run test"
   },
   "devDependencies": {
