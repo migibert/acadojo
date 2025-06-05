@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchAcademies, Academy } from '../services/apiService'; // Assuming Academy type is exported
+import { fetchAcademies } from '../services/apiService'; // Assuming Academy type is exported
+import type { Academy } from '../services/apiService';
 import styles from './MyAcademiesPage.module.css'; // Import CSS Module
 
 const MyAcademiesPage: React.FC = () => {

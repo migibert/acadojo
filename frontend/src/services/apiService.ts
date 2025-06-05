@@ -1,6 +1,7 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
+import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 // Types from Auth0 SDK can be useful for getAccessTokenSilently if you pass it with stricter typing
-// import { GetTokenSilentlyOptions } from '@auth0/auth0-react';
+import type { GetTokenSilentlyOptions } from '@auth0/auth0-react';
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -13,7 +14,7 @@ const apiClient: AxiosInstance = axios.create({
 // It should be called once, early in your application's lifecycle,
 // after the Auth0 client is initialized and isAuthenticated is true.
 export const setupAuthInterceptor = (
-  getAccessTokenSilently: (options?: any) => Promise<string> // Looser type for options for simplicity here
+  getAccessTokenSilently: (options?: GetTokenSilentlyOptions) => Promise<string>
 ) => {
   apiClient.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
