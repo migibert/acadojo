@@ -44,6 +44,52 @@ $ yarn run start:dev
 $ yarn run start:prod
 ```
 
+## Database Configuration for Local Development
+
+This application supports two modes for database authentication, configured via the `DB_AUTH_MODE` environment variable. This is primarily to facilitate local development against a standard PostgreSQL instance while using IAM-based authentication in deployed environments (like Cloud Run).
+
+### Authentication Modes
+
+1.  **IAM Authentication (Default)**
+    *   If `DB_AUTH_MODE` is **not set** or set to any value other than `STANDARD`, the application will attempt to use IAM-based authentication.
+    *   This is the default mode for deployed environments.
+    *   Required environment variables for IAM mode:
+        *   `DB_INSTANCE_CONNECTION_NAME`: The Cloud SQL instance connection name (e.g., `your-project:your-region:your-instance`).
+        *   `DB_USER_NAME`: The database user configured for IAM authentication (e.g., `iam_user_name_in_db`). This is **not** the service account email.
+        *   `DB_NAME`: The name of the database (e.g., `bjj_academy_db`).
+        *   `GCP_REGION`: The GCP region where the Cloud SQL instance is located (e.g., `europe-west1`). This helps the Cloud SQL Connector.
+
+2.  **Standard Username/Password Authentication**
+    *   To use standard username and password authentication (e.g., for a local Dockerized PostgreSQL instance), set `DB_AUTH_MODE=STANDARD`.
+    *   Required environment variables for `STANDARD` mode:
+        *   `DB_HOST`: The hostname of the database server (e.g., `localhost`).
+        *   `DB_PORT`: The port number of the database server (e.g., `5432`).
+        *   `DB_USER_NAME`: The database username (e.g., `postgres`).
+        *   `DB_PASSWORD`: The password for the database username.
+        *   `DB_NAME`: The name of the database (e.g., `bjj_academy_dev`).
+
+### Example `.env` file for Local Development (Standard Auth)
+
+Create a `.env` file in the `backend` directory root for local development:
+
+```env
+# .env file for backend local development
+
+# Database Configuration
+DB_AUTH_MODE=STANDARD
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER_NAME=your_local_db_user
+DB_PASSWORD=your_local_db_password
+DB_NAME=your_local_db_name
+
+# Other environment variables if needed by your application
+# For example, if running the NestJS app on a different port:
+# PORT=3001
+```
+
+**Note:** Ensure your local PostgreSQL instance is running and accessible with the credentials provided. The `.env` file is typically loaded by `dotenv` (which is included in `data-source.ts`). Remember to add `.env` to your `.gitignore` file to avoid committing credentials.
+
 ## Run tests
 
 ```bash

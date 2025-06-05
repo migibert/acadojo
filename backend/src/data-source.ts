@@ -11,36 +11,72 @@ import { Connector, IpAddressTypes } from '@google-cloud/cloud-sql-connector';
 dotenv.config(); // Load .env file
 
 export const getDataSourceOptions = async (): Promise<DataSourceOptions> => {
-  const connector = new Connector();
+  const dbAuthMode = process.env.DB_AUTH_MODE;
+  const dbUser = process.env.DB_USER_NAME;
+  const dbName = process.env.DB_NAME;
 
-  // Ensure critical environment variables are set
-  const dbInstanceConnectionName = process.env.DB_INSTANCE_CONNECTION_NAME; // e.g., your-project:your-region:your-instance
-  const dbUser = process.env.DB_USER_NAME; // IAM user, e.g. bjj-academy-iam-user
-  const dbName = process.env.DB_NAME; // e.g. bjj-academy-db
-
-  if (!dbInstanceConnectionName || !dbUser || !dbName) {
-    throw new Error(
-      'DB_INSTANCE_CONNECTION_NAME, DB_USER_NAME, and DB_NAME must be set in the environment for IAM authentication.'
-    );
-  }
-
-  const clientOpts = await connector.getOptions({
-    instanceConnectionName: dbInstanceConnectionName,
-    ipType: IpAddressTypes.PUBLIC, // Or PRIVATE, depending on your setup
-    authType: 'IAM',
-  });
-
-  return {
+  const baseOptions = {
     type: 'postgres',
-    ...clientOpts, // Spread the connector options (host, port, etc.)
-    username: dbUser, // IAM database user
-    database: dbName,
     entities: [User, Academy, AcademyUser, MacroCycle, MesoCycle, MicroCycle],
     migrations: [__dirname + '/../db/migrations/*{.ts,.js}'],
-    synchronize: false,
+    synchronize: false, // Never use TRUE in production!
     logging: true,
-    // Note: 'password' is not needed here as IAM auth is handled by the connector's SSL context
   };
+
+  if (dbAuthMode === 'STANDARD') {
+    // Standard username/password authentication
+    const dbHost = process.env.DB_HOST;
+    const dbPort = parseInt(process.env.DB_PORT || '5432', 10);
+    const dbPassword = process.env.DB_PASSWORD;
+
+    if (!dbHost || !dbUser || !dbPassword || !dbName) {
+      throw new Error(
+        'For STANDARD auth mode, DB_HOST, DB_USER_NAME, DB_PASSWORD, and DB_NAME must be set.'
+      );
+    }
+
+    return {
+      ...baseOptions,
+      host: dbHost,
+      port: dbPort,
+      username: dbUser,
+      password: dbPassword,
+      database: dbName,
+    };
+  } else {
+    // Default to IAM authentication
+    const connector = new Connector();
+    const dbInstanceConnectionName = process.env.DB_INSTANCE_CONNECTION_NAME;
+    const gcpRegion = process.env.GCP_REGION; // GCP_REGION is used by the connector implicitly via ADC or env
+
+    if (!dbInstanceConnectionName || !dbUser || !dbName) {
+      throw new Error(
+        'For IAM auth mode, DB_INSTANCE_CONNECTION_NAME, DB_USER_NAME (IAM user), and DB_NAME must be set.'
+      );
+    }
+     // GCP_REGION might also be important for the connector, ensure it's available if needed.
+    if (!gcpRegion) {
+      console.warn('GCP_REGION is not set; IAM authentication might rely on default settings or fail if region is ambiguous.');
+    }
+
+
+    const clientOpts = await connector.getOptions({
+      instanceConnectionName: dbInstanceConnectionName,
+      ipType: IpAddressTypes.PUBLIC, // Or PRIVATE, depending on your setup
+      authType: 'IAM',
+      // The connector uses the DB_USER_NAME as the IAM user for token generation if authType is 'IAM'.
+      // It does not explicitly take 'username' in getOptions for IAM auth type,
+      // but TypeORM still needs it in the final options.
+    });
+
+    return {
+      ...baseOptions,
+      ...clientOpts, // Spreads host, port, ssl context from connector
+      username: dbUser, // This should be the IAM database user
+      database: dbName,
+      // Password is not set here as clientOpts from connector provides SSL context for IAM
+    };
+  }
 };
 
 // Initialize dataSource asynchronously
