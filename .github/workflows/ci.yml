@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "fix/deployment-error" ]
   pull_request:
     branches: [ "**" ] # Run on all branches for PRs
 
@@ -40,7 +40,7 @@ jobs:
     name: Build and Deploy to Cloud Run
     runs-on: ubuntu-latest
     needs: lint-test-build # Ensure lint, test, and build pass before deploying
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/fix/deployment-error' && github.event_name == 'push'
 
     permissions: # Needed for Workload Identity Federation
       contents: 'read'
@@ -52,6 +52,7 @@ jobs:
       BACKEND_IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/backend
       GCP_REGION: europe-west1 # Set region to europe-west1
       TERRAFORM_DIR: ./terraform # Assuming terraform files are in a 'terraform' directory at the root
+      TF_CLI_ARGS: "-no-color"
 
     steps:
       - name: Checkout code
@@ -77,13 +78,16 @@ jobs:
       - name: Terraform Init
         run: terraform -chdir=${{ env.TERRAFORM_DIR }} init
 
+      - name: Terraform Apply
+        run: terraform -chdir=${{ env.TERRAFORM_DIR }} apply -auto-approve -var="gcp_project_id=${{ env.GCP_PROJECT_ID }}" -var="gcp_region=${{ env.GCP_REGION }}"
+
       - name: Terraform Output Frontend Service Name
         id: tf_frontend_service
-        run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw frontend_cloud_run_service_name)" >> $GITHUB_OUTPUT
+        run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw frontend_cloud_run_service_name | sed -E 's/\x1B\[[0-9;]*[mK]//g; s/^[^a-zA-Z0-9]*//')" >> $GITHUB_OUTPUT
 
       - name: Terraform Output Backend Service Name
         id: tf_backend_service
-        run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw backend_cloud_run_service_name)" >> $GITHUB_OUTPUT
+        run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw backend_cloud_run_service_name | sed -E 's/\x1B\[[0-9;]*[mK]//g; s/^[^a-zA-Z0-9]*//')" >> $GITHUB_OUTPUT
 
       # Frontend Deployment
       - name: Build Frontend Docker image
