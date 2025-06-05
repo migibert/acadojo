@@ -79,11 +79,15 @@ jobs:
 
       - name: Terraform Output Frontend Service Name
         id: tf_frontend_service
-        run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw frontend_cloud_run_service_name | sed 's/^[^a-zA-Z0-9]*//')" >> $GITHUB_OUTPUT
+        env:
+          TF_CLI_ARGS: "-no-color"
+        run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw frontend_cloud_run_service_name | sed -E 's/\x1B\[[0-9;]*[mK]//g; s/^[^a-zA-Z0-9]*//')" >> $GITHUB_OUTPUT
 
       - name: Terraform Output Backend Service Name
         id: tf_backend_service
-        run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw backend_cloud_run_service_name | sed 's/^[^a-zA-Z0-9]*//')" >> $GITHUB_OUTPUT
+        env:
+          TF_CLI_ARGS: "-no-color"
+        run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw backend_cloud_run_service_name | sed -E 's/\x1B\[[0-9;]*[mK]//g; s/^[^a-zA-Z0-9]*//')" >> $GITHUB_OUTPUT
 
       # Frontend Deployment
       - name: Build Frontend Docker image
