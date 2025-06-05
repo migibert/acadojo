@@ -52,6 +52,7 @@ jobs:
       BACKEND_IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/backend
       GCP_REGION: europe-west1 # Set region to europe-west1
       TERRAFORM_DIR: ./terraform # Assuming terraform files are in a 'terraform' directory at the root
+      TF_CLI_ARGS: "-no-color"
 
     steps:
       - name: Checkout code
@@ -77,16 +78,15 @@ jobs:
       - name: Terraform Init
         run: terraform -chdir=${{ env.TERRAFORM_DIR }} init
 
+      - name: Terraform Apply
+        run: terraform -chdir=${{ env.TERRAFORM_DIR }} apply -auto-approve
+
       - name: Terraform Output Frontend Service Name
         id: tf_frontend_service
-        env:
-          TF_CLI_ARGS: "-no-color"
         run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw frontend_cloud_run_service_name | sed -E 's/\x1B\[[0-9;]*[mK]//g; s/^[^a-zA-Z0-9]*//')" >> $GITHUB_OUTPUT
 
       - name: Terraform Output Backend Service Name
         id: tf_backend_service
-        env:
-          TF_CLI_ARGS: "-no-color"
         run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw backend_cloud_run_service_name | sed -E 's/\x1B\[[0-9;]*[mK]//g; s/^[^a-zA-Z0-9]*//')" >> $GITHUB_OUTPUT
 
       # Frontend Deployment
