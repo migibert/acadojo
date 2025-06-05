@@ -33,3 +33,45 @@ variable "frontend_image_name" {
   type        = string
   default     = "gcr.io/your-gcp-project-id/bjj-academy-frontend" # Placeholder
 }
+
+variable "db_instance_name" {
+  description = "Name of the Cloud SQL instance."
+  type        = string
+  default     = "bjj-academy-db-instance"
+}
+
+variable "db_name" {
+  description = "Name of the database."
+  type        = string
+  default     = "bjj-academy-db"
+}
+
+variable "db_version" {
+  description = "Version of the PostgreSQL database."
+  type        = string
+  default     = "POSTGRES_15"
+}
+
+variable "db_tier" {
+  description = "Tier of the Cloud SQL instance."
+  type        = string
+  default     = "db-f1-micro"
+}
+
+variable "db_deletion_protection" {
+  description = "Enable deletion protection for the Cloud SQL instance."
+  type        = bool
+  default     = false # Set to true for production environments
+}
+
+variable "db_user_name" {
+  description = "Name of the database IAM user."
+  type        = string
+  default     = "bjj-academy-iam-user"
+}
+
+variable "backend_service_account_id" {
+  description = "The ID of the service account for the backend Cloud Run service."
+  type        = string
+  default     = "bjj-academy-backend-sa"
+}

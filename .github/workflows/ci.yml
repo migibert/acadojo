@@ -77,52 +77,34 @@ jobs:
       - name: Terraform Init
         run: terraform -chdir=${{ env.TERRAFORM_DIR }} init
 
-      - name: Terraform Output Frontend Service Name
-        id: tf_frontend_service
-        run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw frontend_cloud_run_service_name)" >> $GITHUB_OUTPUT
+      - name: Terraform Validate
+        run: terraform -chdir=${{ env.TERRAFORM_DIR }} validate
 
-      - name: Terraform Output Backend Service Name
-        id: tf_backend_service
-        run: echo "name=$(terraform -chdir=${{ env.TERRAFORM_DIR }} output -raw backend_cloud_run_service_name)" >> $GITHUB_OUTPUT
+      - name: Terraform Plan
+        run: terraform -chdir=${{ env.TERRAFORM_DIR }} plan -out=tfplan
+        env:
+          TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_VAR_gcp_region: ${{ env.GCP_REGION }}
+          TF_VAR_frontend_image_name: ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+          TF_VAR_backend_image_name: ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+          # Add other TF_VAR_ variables as needed from your variables.tf, e.g.
+          # TF_VAR_db_instance_name: "bjj-academy-db-instance" # If not using random suffix or want to control via CI
+          # TF_VAR_db_name: "bjj-academy-db"
+          # TF_VAR_db_user_name: "bjj-academy-iam-user"
 
-      # Frontend Deployment
+
+      # Build and Push Docker Images (before Terraform Apply)
       - name: Build Frontend Docker image
-        run: docker build -t $FRONTEND_IMAGE_NAME:latest -t $FRONTEND_IMAGE_NAME:${{ github.sha }} -f frontend/Dockerfile ./frontend
+        run: docker build -t ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} -f frontend/Dockerfile ./frontend
 
       - name: Push Frontend Docker image to GCR
-        run: |
-          docker push $FRONTEND_IMAGE_NAME:latest
-          docker push $FRONTEND_IMAGE_NAME:${{ github.sha }}
+        run: docker push ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Deploy Frontend to Cloud Run
-        env:
-          TF_FRONTEND_SERVICE_NAME: ${{ steps.tf_frontend_service.outputs.name }}
-        run: |
-          gcloud run deploy $TF_FRONTEND_SERVICE_NAME \
-            --image $FRONTEND_IMAGE_NAME:${{ github.sha }} \
-            --platform managed \
-            --region ${{ env.GCP_REGION }} \
-            --allow-unauthenticated \
-            --project ${{ env.GCP_PROJECT_ID }} \
-            --quiet
-
-      # Backend Deployment
       - name: Build Backend Docker image
-        run: docker build -t $BACKEND_IMAGE_NAME:latest -t $BACKEND_IMAGE_NAME:${{ github.sha }} -f backend/Dockerfile ./backend
+        run: docker build -t ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }} -f backend/Dockerfile ./backend
 
       - name: Push Backend Docker image to GCR
-        run: |
-          docker push $BACKEND_IMAGE_NAME:latest
-          docker push $BACKEND_IMAGE_NAME:${{ github.sha }}
+        run: docker push ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Deploy Backend to Cloud Run
-        env:
-          TF_BACKEND_SERVICE_NAME: ${{ steps.tf_backend_service.outputs.name }}
-        run: |
-          gcloud run deploy $TF_BACKEND_SERVICE_NAME \
-            --image $BACKEND_IMAGE_NAME:${{ github.sha }} \
-            --platform managed \
-            --region ${{ env.GCP_REGION }} \
-            --allow-unauthenticated \
-            --project ${{ env.GCP_PROJECT_ID }} \
-            --quiet
+      - name: Terraform Apply
+        run: terraform -chdir=${{ env.TERRAFORM_DIR }} apply -auto-approve tfplan
