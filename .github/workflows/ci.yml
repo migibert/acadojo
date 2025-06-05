@@ -61,7 +61,6 @@ jobs:
       - name: Authenticate to Google Cloud via Workload Identity Federation
         uses: 'google-github-actions/auth@v2'
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }} # e.g. projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider
           service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }} # e.g. my-service-account@my-project.iam.gserviceaccount.com
 
@@ -73,6 +72,8 @@ jobs:
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
+        # with:
+        #   terraform_version: "1.0.0" # Optional: specify Terraform version
 
       - name: Terraform Init
         run: terraform -chdir=${{ env.TERRAFORM_DIR }} init
