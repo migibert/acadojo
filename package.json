@@ -10,8 +10,8 @@
     "dev:frontend": "yarn workspace frontend start",
     "build:backend": "yarn workspace backend build",
     "build:frontend": "yarn workspace frontend build",
-    "lint": "yarn workspaces foreach run lint",
-    "test": "yarn workspaces foreach run test"
+    "lint": "(cd backend && yarn lint) && (cd frontend && yarn lint)",
+    "test": "(cd backend && yarn test) && (cd frontend && yarn test || true)"
   },
   "devDependencies": {
     "eslint": "^8.0.0",

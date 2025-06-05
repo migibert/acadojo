@@ -5,7 +5,7 @@ import { dataSourceOptions } from './data-source';
 import { AppService } from './app.service';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(dataSourceOptions), ],
+  imports: [TypeOrmModule.forRoot(dataSourceOptions)],
   controllers: [AppController],
   providers: [AppService],
 })
