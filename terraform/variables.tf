@@ -1,7 +1,7 @@
 variable "gcp_project_id" {
-  description = "The GCP project ID to deploy to."
+  description = "The GCP project ID to deploy to. This variable must be explicitly set."
   type        = string
-  default     = "your-gcp-project-id" # Placeholder
+  # No default value - should be provided via .tfvars, environment variables, or CI/CD pipeline.
 }
 
 variable "gcp_region" {
@@ -34,16 +34,16 @@ variable "frontend_image_name" {
   default     = "gcr.io/your-gcp-project-id/bjj-academy-frontend" # Placeholder
 }
 
-variable "db_instance_name" {
-  description = "Name of the Cloud SQL instance."
+variable "db_instance_name_prefix" {
+  description = "Prefix for the Cloud SQL database instance name. A random suffix will be appended."
   type        = string
-  default     = "bjj-academy-db-instance"
+  default     = "bjj-academy-instance"
 }
 
 variable "db_name" {
-  description = "Name of the database."
+  description = "Name of the main application database."
   type        = string
-  default     = "bjj-academy-db"
+  default     = "bjj-academy-app-db" # Changed default
 }
 
 variable "db_version" {
@@ -64,11 +64,7 @@ variable "db_deletion_protection" {
   default     = false # Set to true for production environments
 }
 
-variable "db_user_name" {
-  description = "Name of the database IAM user."
-  type        = string
-  default     = "bjj-academy-iam-user"
-}
+# The db_user_name variable block is removed by this change.
 
 variable "backend_service_account_id" {
   description = "The ID of the service account for the backend Cloud Run service."

@@ -53,20 +53,35 @@ This application supports two modes for database authentication, configured via 
 1.  **IAM Authentication (Default)**
     *   If `DB_AUTH_MODE` is **not set** or set to any value other than `STANDARD`, the application will attempt to use IAM-based authentication.
     *   This is the default mode for deployed environments.
-    *   Required environment variables for IAM mode:
-        *   `DB_INSTANCE_CONNECTION_NAME`: The Cloud SQL instance connection name (e.g., `your-project:your-region:your-instance`).
-        *   `DB_USER_NAME`: The database user configured for IAM authentication (e.g., `iam_user_name_in_db`). This is **not** the service account email.
-        *   `DB_NAME`: The name of the database (e.g., `bjj_academy_db`).
-        *   `GCP_REGION`: The GCP region where the Cloud SQL instance is located (e.g., `europe-west1`). This helps the Cloud SQL Connector.
+    *   **For Deployed Environments (e.g., Cloud Run):**
+        *   `DB_INSTANCE_CONNECTION_NAME`: The Cloud SQL instance connection name (e.g., `your-project:your-region:your-instance`). This is configured in Terraform.
+        *   `DB_USER_NAME`: For deployed services, this is **automatically set to the service account email** of the Cloud Run service itself (e.g., `your-backend-sa@your-project.iam.gserviceaccount.com`). This is configured in Terraform and usually not overridden for the deployed service.
+        *   `DB_NAME`: The name of the database (e.g., `bjj_academy_app_db`). This is configured in Terraform.
+        *   `GCP_REGION`: The GCP region where the Cloud SQL instance is located (e.g., `europe-west1`).
+    *   **For Local Development using IAM against a Cloud SQL instance:**
+        *   Set `DB_AUTH_MODE` to any value other than `STANDARD` (or leave it unset).
+        *   `DB_INSTANCE_CONNECTION_NAME`: As above.
+        *   `DB_USER_NAME`: **Must be set to your personal Google IAM user email** (e.g., `developer.email@example.com`).
+            *   Your IAM user must be granted the `roles/cloudsql.client` permission in the GCP project.
+            *   A Cloud SQL IAM user must be created for your email: `gcloud sql users create developer.email@example.com --instance=INSTANCE_NAME --type=CLOUD_IAM_USER`.
+        *   `DB_NAME`: As above.
+        *   `GCP_REGION`: As above.
+        *   Ensure you are authenticated with GCP Application Default Credentials (e.g., by running `gcloud auth application-default login`).
 
 2.  **Standard Username/Password Authentication**
     *   To use standard username and password authentication (e.g., for a local Dockerized PostgreSQL instance), set `DB_AUTH_MODE=STANDARD`.
     *   Required environment variables for `STANDARD` mode:
         *   `DB_HOST`: The hostname of the database server (e.g., `localhost`).
         *   `DB_PORT`: The port number of the database server (e.g., `5432`).
-        *   `DB_USER_NAME`: The database username (e.g., `postgres`).
+        *   `DB_USER_NAME`: The database username (e.g., `postgres`). (Note: if `DB_AUTH_MODE=STANDARD` is set, this `DB_USER_NAME` is used, not an IAM email).
         *   `DB_PASSWORD`: The password for the database username.
         *   `DB_NAME`: The name of the database (e.g., `bjj_academy_dev`).
+
+### A Note on Terraform Variables
+
+The infrastructure for this backend (including Cloud SQL instance and user setup for deployed environments) is managed by Terraform. Key points regarding recent changes:
+-   The Terraform variable `db_user_name` (previously for setting a custom IAM user name) has been removed. The deployed service now uses its own service account email as the database IAM user, configured directly in Terraform.
+-   Terraform variables `db_instance_name_prefix` (for the Cloud SQL instance name, with a random suffix added) and `db_name` (for the database name) now have sensible defaults in `terraform/variables.tf`. These typically do not need to be overridden via CI/CD environment variables for the primary deployment.
 
 ### Example `.env` file for Local Development (Standard Auth)
 

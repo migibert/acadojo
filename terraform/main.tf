@@ -16,7 +16,7 @@ resource "google_cloud_run_v2_service" "backend_cloud_run_service" {
       }
       env {
         name  = "DB_USER_NAME"
-        value = var.db_user_name # This is the IAM user for the DB
+        value = google_service_account.backend_sa.email # Use SA email for DB IAM user
       }
       env {
         name  = "DB_NAME"
@@ -146,10 +146,10 @@ resource "google_sql_database" "default" {
 }
 
 resource "google_sql_user" "iam_user" {
-  name     = var.db_user_name
+  name     = google_service_account.backend_sa.email # Use the backend service account email
   instance = google_sql_database_instance.default.name
   project  = var.gcp_project_id
-  type     = "CLOUD_IAM_USER" # Or CLOUD_IAM_SERVICE_ACCOUNT for service accounts
+  type     = "CLOUD_IAM_SERVICE_ACCOUNT" # Type must be this for SA email
 }
 
 output "backend_cloud_run_service_name" {
@@ -178,6 +178,6 @@ output "db_name" {
 }
 
 output "db_user_name" {
-  description = "The name of the database IAM user."
-  value       = google_sql_user.iam_user.name
+  description = "The service account email used as the database IAM user."
+  value       = google_sql_user.iam_user.name # This will be the service account email
 }
