@@ -79,7 +79,7 @@ jobs:
         run: terraform -chdir=${{ env.TERRAFORM_DIR }} init
 
       - name: Terraform Apply
-        run: terraform -chdir=${{ env.TERRAFORM_DIR }} apply -auto-approve
+        run: terraform -chdir=${{ env.TERRAFORM_DIR }} apply -auto-approve -var="gcp_project_id=${{ env.GCP_PROJECT_ID }}" -var="gcp_region=${{ env.GCP_REGION }}"
 
       - name: Terraform Output Frontend Service Name
         id: tf_frontend_service
