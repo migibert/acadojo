@@ -18,7 +18,14 @@ export const getDataSourceOptions = async (): Promise<DataSourceOptions> => {
   const baseOptions = {
     type: 'postgres',
     entities: [User, Academy, AcademyUser, MacroCycle, MesoCycle, MicroCycle],
-    migrations: [__dirname + '/../db/migrations/*{.ts,.js}'],
+    // Adjusted path to prioritize .js for production, .ts for development via ts-node.
+    // Assumes migrations are in 'db/migrations' and compiled to 'dist/db/migrations'
+    // or that ts-node resolves .ts files from 'db/migrations' when run from src.
+    // The key is that after compilation, this path should resolve to JS files.
+    // If data-source.js is in dist/src/, __dirname is dist/src.
+    // Then __dirname + '/../db/migrations/' is dist/db/migrations/
+    migrations: [__dirname + '/../db/migrations/*{.js,.ts}'],
+    migrationsRun: true, // Automatically run migrations on startup
     synchronize: false, // Never use TRUE in production!
     logging: true,
   };

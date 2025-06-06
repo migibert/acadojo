@@ -83,6 +83,57 @@ The infrastructure for this backend (including Cloud SQL instance and user setup
 -   The Terraform variable `db_user_name` (previously for setting a custom IAM user name) has been removed. The deployed service now uses its own service account email as the database IAM user, configured directly in Terraform.
 -   Terraform variables `db_instance_name_prefix` (for the Cloud SQL instance name, with a random suffix added) and `db_name` (for the database name) now have sensible defaults in `terraform/variables.tf`. These typically do not need to be overridden via CI/CD environment variables for the primary deployment.
 
+### Database Migrations
+
+Database schema changes are managed using TypeORM migrations. Migration files are located in the `backend/db/migrations/` directory.
+
+**Creating Migrations:**
+To generate a new migration file, use the following npm script from the `backend` directory:
+```bash
+npm run migration:generate --name=YourDescriptiveMigrationName
+```
+This will create a new timestamped migration file in `backend/db/migrations/`. You then need to edit this file to add your schema changes (using `queryRunner.query(...)` or TypeORM's schema builder methods) and logic for reverting them in the `down` method.
+
+**How Migrations Are Applied:**
+-   The backend application is configured with `migrationsRun: true` in its TypeORM `DataSourceOptions` (see `src/data-source.ts`).
+-   This means **pending migrations are automatically run by the application itself every time it starts up.**
+-   For this to work, the application's runtime IAM Service Account (`backend-sa`, whose email is set as `DB_USER_NAME` when `DB_AUTH_MODE` is IAM) must have sufficient DDL/DCL permissions on the database. These permissions are intended to be granted by the **"One-Time Database Preparation Script"** detailed in the root `README.md`.
+-   **Permissions within Migrations:** Migration scripts (especially initial ones) should still `GRANT` necessary DML permissions (`SELECT, INSERT, UPDATE, DELETE`) on created tables/objects to the `backend-sa`'s SQL user. This ensures the application can use the schema it defines/modifies.
+
+### Running Migrations Locally (for Development & Testing)
+
+While migrations run automatically in deployed environments, you might need to run them manually during local development (e.g., after generating a new one or to test).
+
+**1. Against a Local Dockerized PostgreSQL (Standard Authentication):**
+   - Ensure your local PostgreSQL container is running.
+   - Set up your `.env` file with `DB_AUTH_MODE=STANDARD` and the correct `DB_HOST`, `DB_PORT`, `DB_USER_NAME`, `DB_PASSWORD`, and `DB_NAME`. The `DB_USER_NAME` for this local setup (e.g., `postgres`) should have privileges to alter the schema on your local database.
+   - Navigate to the `backend` directory and run:
+     ```bash
+     npm run migration:run
+     ```
+     You can also use `migration:revert` if needed.
+
+**2. Against a Cloud SQL Instance (using IAM for `backend-sa`):**
+   This scenario is for testing your migrations against a Cloud SQL database, using the same IAM user (`backend-sa`) that the deployed application uses.
+   - **Prerequisites**: The "One-Time Database Preparation Script" must have been run for your Cloud SQL instance, granting DDL/DCL rights to the `backend-sa`'s SQL user.
+   - **Authentication**: You need to impersonate the `backend-sa` service account.
+     ```bash
+     gcloud auth application-default login --impersonate-service-account=<backend_sa_email_from_terraform_outputs>
+     ```
+     (Replace `<backend_sa_email_...>` with the actual email from `foundations` Terraform output `backend_service_account_email`). Your personal GCP account needs the "Service Account Token Creator" role on the `backend-sa`.
+   - **Environment Variables for TypeORM CLI**:
+     - Ensure `DB_AUTH_MODE` is **not** set to `STANDARD` (or is unset) in your environment/`.env` file.
+     - Set `DB_INSTANCE_CONNECTION_NAME` to your Cloud SQL instance's connection name.
+     - Set `DB_NAME` to the target database name.
+     - Set `DB_USER_NAME` to the `backend-sa` service account email (the one you are impersonating).
+     - Set `GCP_REGION` if needed by the Cloud SQL connector.
+   - **Run Migrations CLI Commands**:
+     Navigate to the `backend` directory and run:
+     ```bash
+     npm run migration:run
+     # Or other commands like migration:revert, migration:show
+     ```
+
 ### Example `.env` file for Local Development (Standard Auth)
 
 Create a `.env` file in the `backend` directory root for local development:
